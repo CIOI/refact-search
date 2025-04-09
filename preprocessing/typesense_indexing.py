@@ -42,13 +42,17 @@ def typesense_indexing(env: Environment):
         "default_sorting_field": "product_id",
     }
     collections = client.collections.retrieve()
-    if not any(
-        collection["name"] == products_schema["name"] for collection in collections
-    ):
+    if any(collection["name"] == products_schema["name"] for collection in collections):
         try:
-            client.collections.create(products_schema)
+            client.collections["products"].delete()
         except Exception as e:
             print(e)
+
+    try:
+        client.collections.create(products_schema)
+    except Exception as e:
+        print(e)
+
     with open(fixture_path) as jsonl_file:
         client.collections["products"].documents.import_(
             jsonl_file.read().encode("utf-8")

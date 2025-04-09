@@ -30,5 +30,7 @@ def test_search(client):
         "sort_by": "product_id:desc",
     }
     results = client.collections["products"].documents.search(search_parameters)
+    assert results["hits"] is not None
     for result in results["hits"]:
+        print(result["document"]["serial_number"], result["document"]["name"])
         assert "black" in result["document"]["name"]

@@ -7,9 +7,10 @@ from dotenv import load_dotenv
 class Environment(BaseSettings):
     TYPESENSE_API_KEY: str
 
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
+    model_config = {
+        "env_file": ".env",
+        "env_file_encoding": "utf-8",
+    }
 
     @classmethod
     def from_env_file(cls, env_file: str | None = None):

@@ -1,10 +1,11 @@
 from typesense import Client
 from src.config._environment import Environment
 
+env = Environment()
 
 client = Client(
     {
-        "api_key": "xyz",
+        "api_key": env.typesense_api_key,
         "nodes": [
             {
                 "host": "localhost",  # For Typesense Cloud use xxx.a1.typesense.net

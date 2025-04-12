@@ -6,6 +6,10 @@ from dotenv import load_dotenv
 
 class Environment(BaseSettings):
     TYPESENSE_API_KEY: str
+    TYPESENSE_HOST: str
+    TYPESENSE_PORT: str
+    TYPESENSE_PROTOCOL: str
+    LOG_LEVEL: str
 
     model_config = {
         "env_file": ".env",
@@ -22,7 +26,3 @@ class Environment(BaseSettings):
             load_dotenv(env_file)
 
         return cls()
-
-    @property
-    def typesense_api_key(self) -> str:
-        return self.TYPESENSE_API_KEY

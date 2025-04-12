@@ -9,3 +9,19 @@ services:
     env_file:
       - .env
     command: '--data-dir /data --api-key=${TYPESENSE_API_KEY} --enable-cors'
+
+  api:
+    build: .
+    restart: on-failure
+    ports:
+      - "8100:8100"
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    depends_on:
+      - typesense
+    environment:
+      - TYPESENSE_HOST=typesense
+      - TYPESENSE_PORT=8108
+      - TYPESENSE_PROTOCOL=http

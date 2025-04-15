@@ -10,6 +10,7 @@ class Environment(BaseSettings):
     TYPESENSE_PORT: str
     TYPESENSE_PROTOCOL: str
     LOG_LEVEL: str
+    QDRANT_URL: str
 
     model_config = {
         "env_file": ".env",

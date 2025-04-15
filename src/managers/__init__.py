@@ -1,3 +1,4 @@
-from ._manager import TypesenseManager
+from .typesense import TypesenseManager
+from .qdrant import QdrantManager
 
-__all__ = ["TypesenseManager"]
+__all__ = ["TypesenseManager", "QdrantManager"]

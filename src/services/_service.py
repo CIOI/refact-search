@@ -1,6 +1,6 @@
 # src/services/_service.py
 from typing import Dict, List, Optional
-from src.managers import TypesenseManager
+from src.managers.typesense import TypesenseManager
 from src.config._logger import LoggerService
 
 

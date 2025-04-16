@@ -70,7 +70,7 @@ class TypesenseController:
             HTTPException: 검색 실패 시
         """
         try:
-            return self.search_service.search(
+            return self.service.search(
                 query=query,
                 mall_id=mall_id,
                 page=page,
@@ -95,7 +95,7 @@ class TypesenseController:
             HTTPException: 자동완성 실패 시
         """
         try:
-            return self.search_service.get_suggestions(
+            return self.service.get_suggestions(
                 query=query,
                 mall_id=mall_id,
             )

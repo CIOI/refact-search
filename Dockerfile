@@ -7,15 +7,14 @@ WORKDIR /app
 # Poetry 설치
 RUN pip install poetry
 
+# Poetry 가상 환경 비활성화
+RUN poetry config virtualenvs.create false
+
 # 의존성 파일 복사
 COPY pyproject.toml poetry.lock ./
 
 # 의존성 설치
-RUN poetry config virtualenvs.create false \
-    && poetry install --no-interaction --no-ansi
-
-# 소스 코드 복사
-COPY . .
+RUN poetry install --no-interaction --no-ansi
 
 # 환경 변수 파일 복사
 COPY .env .env
@@ -24,4 +23,4 @@ COPY .env .env
 EXPOSE 8100
 
 # 실행 명령
-CMD ["poetry", "run", "uvicorn", "src.app:app", "--host", "0.0.0.0", "--port", "8100"]
+CMD ["poetry", "run", "python", "-m", "src.app"]

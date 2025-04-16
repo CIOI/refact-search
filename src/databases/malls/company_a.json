@@ -1,7 +1,20 @@
 {
     "mall_id": "company_a",
     "name": "company_a",
-    "description": null,
+    "description": "kaggle data odd product_id",
+    "fields": [
+      {"name": "serial_number", "type": "int32"},
+      {"name": "description", "type": "string"},
+      {"name": "name", "type": "string"},
+      {"name": "product_id", "type": "int32"},
+      {"name": "brand", "type": "string"},
+      {"name": "category", "type": "string"},
+      {"name": "price", "type": "float"},
+      {"name": "subcategory", "type": "string"},
+      {"name": "gender", "type": "string"},
+      {"name": "pose", "type": "string"},
+      {"name": "image_path", "type": "string"}
+    ],
     "index_fields": [
       "product_id"
     ],

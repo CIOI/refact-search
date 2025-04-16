@@ -1,3 +1,3 @@
-from ._controller import SearchController
+from .typesense import TypesenseController
 
-__all__ = ["SearchController"]
+__all__ = ["TypesenseController"]

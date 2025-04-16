@@ -55,6 +55,16 @@ docker-compose up -d api
 ```bash
 streamlit run src/streamlit.py
 ```
+
+### company_a를 8501 포트에서 실행
+```bash
+streamlit run src/streamlit.py --server.port 8501 --mall_id company_a
+```
+
+### 다른 터미널에서 company_b를 8502 포트에서 실행
+```
+streamlit run src/streamlit.py --server.port 8502 --mall_id company_b
+```
 - 대시보드: http://localhost:8501
 
 ## 서비스 포트

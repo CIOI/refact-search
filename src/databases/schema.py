@@ -2,7 +2,6 @@ import json
 from pathlib import Path
 from typing import List, Optional
 from pydantic import BaseModel
-from findup import glob
 
 
 class MallSchema(BaseModel):
@@ -13,12 +12,15 @@ class MallSchema(BaseModel):
     description: Optional[str] = None
 
     # Typesense 관련 설정
+    fields: List[dict] = []
     index_fields: List[str] = []
     facet_fields: List[str] = []
     default_sorting_field: str = "product_id"
 
     # Qdrant 관련 설정
     id_field: str = "product_id"
+
+    # 검색 결과에 포함할 필드
     payload_fields: List[str] = []
 
     class Config:
@@ -27,7 +29,7 @@ class MallSchema(BaseModel):
                 "mall_id": "mall1",
                 "name": "패션몰1",
                 "description": "의류 전문몰",
-                "index_fields": ["product_id", "name", "description"],
+                "index_fields": ["product_id"],
                 "facet_fields": ["brand", "category", "price"],
                 "default_sorting_field": "product_id",
                 "id_field": "product_id",
@@ -36,7 +38,7 @@ class MallSchema(BaseModel):
         }
 
 
-def create_mall_schema(json_path: str) -> MallSchema:
+def get_mall_schema(company_name: str) -> MallSchema:
     """
     JSON 파일에서 몰 스키마를 생성합니다.
 
@@ -50,7 +52,9 @@ def create_mall_schema(json_path: str) -> MallSchema:
         FileNotFoundError: JSON 파일이 존재하지 않는 경우
         ValueError: JSON 형식이 잘못된 경우
     """
+    app_dir = Path(__file__).parent.parent  # src 디렉토리
     try:
+        json_path = Path(app_dir, "databases", "malls", f"{company_name}.json")
         with open(json_path, "r", encoding="utf-8") as f:
             data = json.load(f)
         return MallSchema(**data)
@@ -90,9 +94,7 @@ def create_mall_document(
         OSError: 디렉토리 생성 실패 시
     """
     # app.py 위치 찾기
-    app_path = next(glob("app.py"))
-    if not app_path:
-        raise FileNotFoundError("app.py를 찾을 수 없습니다.")
+    app_path = Path(__file__).parent.parent
 
     # databases/models 디렉토리 경로 생성
     output_dir = Path(app_path).parent / "databases" / "models"

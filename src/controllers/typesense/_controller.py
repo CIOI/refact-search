@@ -1,18 +1,18 @@
 from fastapi import APIRouter, HTTPException
 from typing import Optional
-from src.services import SearchService
+from src.services import TypesenseService
 from src.config._logger import LoggerService
 
 
-class SearchController:
+class TypesenseController:
     """검색 컨트롤러 클래스
 
     Attributes:
-        search_service (SearchService): 검색 서비스
+        service (TypesenseService): 검색 서비스
     """
 
-    def __init__(self, search_service: SearchService, logger: LoggerService):
-        self.search_service = search_service
+    def __init__(self, service: TypesenseService, logger: LoggerService):
+        self.service = service
         self.logger = logger
 
     def register_routes(self, router: APIRouter) -> APIRouter:

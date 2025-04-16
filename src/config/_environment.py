@@ -11,6 +11,10 @@ class Environment(BaseSettings):
     TYPESENSE_PROTOCOL: str
     LOG_LEVEL: str
     QDRANT_URL: str
+    # CLIP 모델 설정
+    MODEL_NAME: str = "patrickjohncyh/fashion-clip"
+    TOKENIZER_NAME: str = "patrickjohncyh/fashion-clip"
+    VECTOR_SIZE: int = 512
 
     model_config = {
         "env_file": ".env",

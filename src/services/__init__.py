@@ -1,3 +1,4 @@
-from ._service import SearchService
+from .typesense._service import TypesenseService
+from .qdrant._service import QdrantService
 
-__all__ = ["SearchService"]
+__all__ = ["TypesenseService", "QdrantService"]

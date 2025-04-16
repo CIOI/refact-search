@@ -1,8 +1,9 @@
 from typesense import Client
 from src.config._environment import Environment
 from src.config._logger import LoggerService
-from typing import Optional, Dict, Any
+from typing import Optional, List
 from pathlib import Path
+from typesense.types.collection import CollectionCreateSchema
 
 
 class TypesenseManager:
@@ -42,15 +43,15 @@ class TypesenseManager:
             )
         return self._client
 
-    def create_collection(self, schema: Dict[str, Any]) -> None:
+    def create_collection(self, schema: CollectionCreateSchema) -> None:
         """Collection을 생성합니다. 이미 존재하는 경우 삭제 후 재생성합니다.
 
         Args:
             schema (Dict[str, Any]): Collection 스키마
         """
         try:
-            collections = self.client.collections.retrieve()
-            if any(collection["name"] == schema["name"] for collection in collections):
+            collections = self.get_collection_list()
+            if schema["name"] in collections:
                 self.logger.warning(f"Collection {schema['name']} already exists")
                 self.delete_collection(schema["name"])
 
@@ -103,3 +104,11 @@ class TypesenseManager:
                 f"Failed to import documents to {collection_name}: {str(e)}"
             )
             raise
+
+    def get_collection_list(self) -> List[str]:
+        """Collection 목록을 가져옵니다.
+
+        Returns:
+            List[str]: Collection 목록
+        """
+        return [collection["name"] for collection in self.client.collections.retrieve()]

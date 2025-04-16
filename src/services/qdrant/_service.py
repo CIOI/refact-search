@@ -1,23 +1,26 @@
 # src/services/_service.py
 from typing import Dict, List, Optional
-from src.managers.typesense import TypesenseManager
+from src.managers.qdrant import QdrantManager
 from src.config._logger import LoggerService
+from src.embedding import ClipEmbeddingModel
 
 
-class SearchService:
+class QdrantService:
     """검색 서비스 클래스
 
     Attributes:
-        typesense_manager (TypesenseManager): Typesense 매니저
+        qdrant_manager (QdrantManager): Qdrant 매니저
         logger (LoggerService): 로깅 서비스
     """
 
     def __init__(
         self,
-        typesense_manager: TypesenseManager,
+        qdrant_manager: QdrantManager,
+        embedding_model: ClipEmbeddingModel,
         logger: LoggerService,
     ):
-        self.typesense_manager = typesense_manager
+        self.qdrant_manager = qdrant_manager
+        self.embedding_model = embedding_model
         self.logger = logger
 
     def search(

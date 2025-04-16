@@ -1,0 +1,24 @@
+{
+    "mall_id": "company_b",
+    "name": "company_b",
+    "description": null,
+    "index_fields": [
+      "product_id"
+    ],
+    "facet_fields": [
+      "brand",
+      "category",
+      "price",
+      "subcategory",
+      "gender"
+    ],
+    "default_sorting_field": "product_id",
+    "payload_fields": [
+      "name",
+      "description",
+      "category",
+      "brand",
+      "gender",
+      "image_path"
+    ]
+  }

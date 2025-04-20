@@ -1,12 +1,12 @@
 from src.managers import QdrantManager
 from src.embedding import ClipEmbeddingModel
-from typesense import Client
+from src.services import TypesenseService
 
 
 class SearchService:
     def __init__(
         self,
-        typesense_client: Client,
+        typesense_service: TypesenseService,
         embedding_service: ClipEmbeddingModel,
         qrant_manager: QdrantManager,
         mall_id: str,
@@ -22,7 +22,7 @@ class SearchService:
         return typesense_results + qdrant_results
 
     def _search_typesense(self, query: str):
-        pass
+        return self.typesense_service.search(query)
 
     def _search_qdrant(self, query: str):
         pass

@@ -4,6 +4,7 @@ from src.config._logger import LoggerService
 from typing import Optional, List
 from pathlib import Path
 from typesense.types.collection import CollectionCreateSchema
+from typesense.types.document import SearchParameters, SearchResponse
 
 
 class TypesenseManager:
@@ -112,3 +113,36 @@ class TypesenseManager:
             List[str]: Collection 목록
         """
         return [collection["name"] for collection in self.client.collections.retrieve()]
+
+    def search(
+        self,
+        collection_name: str,
+        search_parameters: SearchParameters,
+    ) -> SearchResponse:
+        """검색 쿼리를 실행하고 결과를 반환합니다.
+
+        Args:
+            search_parameters (SearchParameters): 검색 쿼리
+            collection_name (str): 검색할 Collection 이름
+
+        Returns:
+            List[dict]: 검색 결과
+        """
+        return self.client.collections[collection_name].documents.search(
+            search_parameters
+        )
+
+    def get_suggestions(self, collection_name: str, query: str) -> List[str]:
+        """검색어 자동완성을 위한 제안을 가져옵니다.
+
+        Args:
+            collection_name (str): 검색할 Collection 이름
+            query (str): 검색어
+
+        Returns:
+            List[str]: 검색어 자동완성 제안 목록
+        """
+        response = self.client.collections[collection_name].documents.search(
+            {"q": query, "query_by": "name", "per_page": 5, "prefix": True}
+        )
+        return [hit["document"]["name"] for hit in response["hits"]]

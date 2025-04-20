@@ -22,6 +22,7 @@ qdrant-client = ">=1.13.3,<2.0.0"
 transformers = "^4.51.3"
 torch = "^2.6.0"
 pillow = "^11.2.1"
+poethepoet = "^0.33.1"
 
 [tool.poe.tasks]
 test = "python -m pytest"
@@ -36,4 +37,5 @@ build-backend = "poetry.core.masonry.api"
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.5"
 poethepoet = "^0.33.1"
+pytest-asyncio = "^0.26.0"
 

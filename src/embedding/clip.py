@@ -7,9 +7,10 @@ from src.config._logger import LoggerService
 from .schma import ClipModel
 from transformers import CLIPProcessor, CLIPModel
 from transformers import CLIPTokenizerFast
+from ._model import EmbeddingModel
 
 
-class ClipEmbeddingModel:
+class ClipEmbeddingModel(EmbeddingModel):
     def __init__(
         self,
         clip_model: ClipModel,
@@ -24,20 +25,39 @@ class ClipEmbeddingModel:
             model_class: 모델 클래스 (예: CLIPModel)
             tokenizer_class: 토크나이저 클래스 (예: CLIPTokenizerFast)
         """
-        self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
+        self.logger = logger
+        self.device = device or (
+            "cuda"
+            if torch.cuda.is_available()
+            else "mps" if torch.backends.mps.is_available() else "cpu"
+        )
+        self.logger.info(f"Using device: {self.device}")
         self.clip_model = clip_model
         self.model = None
         self.processor = None
         self.tokenizer = None
-        self.logger = logger
+        self.model_load()
 
     def model_load(self, image_usage: bool = False):
-        self.model = CLIPModel.from_pretrained(self.clip_model.model_name).to(
-            self.device
-        )
-        self.tokenizer = CLIPTokenizerFast.from_pretrained(self.clip_model.tokenizer)
+        self.logger.info(f"Loading CLIP model from {self.clip_model.model_name}")
+        self.model = CLIPModel.from_pretrained(
+            self.clip_model.model_name,
+        ).to(self.device)
+        self.tokenizer = CLIPTokenizerFast.from_pretrained(self.clip_model.model_name)
+
+        # 디바이스 이동 전 상태 확인
+        self.logger.info(f"Moving model to device: {self.device}")
+        self.model = self.model.to(self.device)
+        self.model.eval()  # 평가 모드로 설정
+
+        # 디바이스 이동 후 상태 확인
+        for name, param in self.model.named_parameters():
+            if torch.isnan(param).any():
+                self.logger.warning(f"NaN weights found after device move in {name}")
+
         if image_usage:
             self.processor = CLIPProcessor.from_pretrained(self.clip_model.model_name)
+            self.logger.info(f"Processor loaded successfully")
 
     def get_text_embedding(
         self,
@@ -56,21 +76,21 @@ class ClipEmbeddingModel:
         Returns:
             텍스트 임베딩 텐서
         """
-        # 텍스트 토큰화
         text = get_combined_text(product)
         inputs = self.tokenizer(
-            text,
-            padding=True,
-            truncation=True,
-            max_length=max_length,
-            return_tensors=return_tensors,
+            text, padding=True, truncation=True, max_length=77, return_tensors="pt"
         ).to(self.device)
 
-        # 임베딩 생성
         with torch.no_grad():
-            text_embeddings = self.model.get_text_features(**inputs)
+            text_outputs = self.model.text_model(**inputs)
+            self.logger.info(
+                f"Text encoder sample values: {text_outputs.last_hidden_state[0, 0, :5]}"
+            )
+            norm = text_features.norm(dim=-1, keepdim=True)
+            self.logger.info(f"Norm value: {norm.item()}")
+            text_features = text_features / norm
 
-        return text_embeddings
+        return text_features
 
     def get_image_embedding(
         self, image: Union[Image.Image, list[Image.Image]], return_tensors: str = "pt"

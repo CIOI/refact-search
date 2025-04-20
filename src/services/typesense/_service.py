@@ -2,8 +2,9 @@
 from typing import Dict, List, Optional
 from src.managers.typesense import TypesenseManager
 from src.config._logger import LoggerService
-from src.databases.schema import MallSchema
+from src.databases.schema import MallSchema, get_mall_schema
 from typesense.types.collection import CollectionCreateSchema
+from typesense.types.document import RequiredSearchParameters
 
 
 class TypesenseService:
@@ -21,13 +22,17 @@ class TypesenseService:
     ):
         self.typesense_manager = typesense_manager
         self.logger = logger
+        self.mall_id: Optional[str] = None
+        self.mall_schema: Optional[MallSchema] = None
+
+    def set_mall(self, mall_id: str):
+        self.mall_id = mall_id
+        self.mall_schema = get_mall_schema(mall_id)
 
     def search(
         self,
         query: str,
-        mall_id: str,
-        page: int = 1,
-        per_page: int = 10,
+        query_by: Optional[str] = "name,description",
         filter_by: Optional[str] = None,
         sort_by: Optional[str] = None,
     ) -> Dict:
@@ -36,8 +41,6 @@ class TypesenseService:
         Args:
             query (str): 검색어
             mall_id (str): 몰 ID (mall1 또는 mall2)
-            page (int): 페이지 번호
-            per_page (int): 페이지당 결과 수
             filter_by (Optional[str]): 필터 조건
             sort_by (Optional[str]): 정렬 조건
 
@@ -45,11 +48,9 @@ class TypesenseService:
             Dict: 검색 결과
         """
         try:
-            search_parameters = {
+            search_parameters: RequiredSearchParameters = {
                 "q": query,
-                "query_by": "name,description",
-                "page": page,
-                "per_page": per_page,
+                "query_by": query_by,
             }
 
             if filter_by:
@@ -57,43 +58,41 @@ class TypesenseService:
             if sort_by:
                 search_parameters["sort_by"] = sort_by
 
-            results = self.typesense_manager.client.collections[
-                mall_id
-            ].documents.search(search_parameters)
+            results = self.typesense_manager.search(
+                self.mall_id,
+                search_parameters,
+            )
 
-            self.logger.info(f"Search completed for query: {query} in mall: {mall_id}")
+            self.logger.info(
+                f"Search completed for query: {query} in mall: {self.mall_id}"
+            )
             return results
         except Exception as e:
             self.logger.error(
-                f"Search failed for query: {query} in mall: {mall_id}, error: {str(e)}"
+                f"Search failed for query: {query}"
+                + f" in mall: {self.mall_id}, error: {str(e)}"
             )
             raise
 
-    def get_suggestions(self, query: str, mall_id: str) -> List[str]:
+    def get_suggestions(self, query: str) -> List[str]:
         """검색어 자동완성
 
         Args:
             query (str): 검색어
-            mall_id (str): 몰 ID (mall1 또는 mall2)
 
         Returns:
             List[str]: 자동완성 제안 목록
         """
         try:
-            results = self.typesense_manager.client.collections[
-                mall_id
-            ].documents.search(
-                {"q": query, "query_by": "name", "per_page": 5, "prefix": True}
-            )
-
-            suggestions = [hit["document"]["name"] for hit in results["hits"]]
+            suggestions = self.typesense_manager.get_suggestions(self.mall_id, query)
             self.logger.info(
-                f"Suggestions generated for query: {query} in mall: {mall_id}"
+                f"Suggestions generated for query: {query} in mall: {self.mall_id}"
             )
             return suggestions
         except Exception as e:
             self.logger.error(
-                f"Failed to generate suggestions for query: {query} in mall: {mall_id}, error: {str(e)}"
+                f"Failed to generate suggestions for query: {query}"
+                + f" in mall: {self.mall_id}, error: {str(e)}"
             )
             raise
 

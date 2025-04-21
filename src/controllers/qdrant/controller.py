@@ -1,17 +1,17 @@
 from fastapi import APIRouter, HTTPException
 from typing import Optional
-from src.services import TypesenseService
+from src.services import QdrantService
 from src.config._logger import LoggerService
 
 
-class TypesenseController:
+class QdrantController:
     """검색 컨트롤러 클래스
 
     Attributes:
-        service (TypesenseService): 검색 서비스
+        service (QdrantService): 검색 서비스
     """
 
-    def __init__(self, service: TypesenseService, logger: LoggerService):
+    def __init__(self, service: QdrantService, logger: LoggerService):
         self.service = service
         self.logger = logger
 
@@ -48,6 +48,8 @@ class TypesenseController:
         self,
         query: str,
         mall_id: str,
+        page: int = 1,
+        per_page: int = 10,
         filter_by: Optional[str] = None,
         sort_by: Optional[str] = None,
     ):
@@ -71,6 +73,8 @@ class TypesenseController:
             return self.service.search(
                 query=query,
                 mall_id=mall_id,
+                page=page,
+                per_page=per_page,
                 filter_by=filter_by,
                 sort_by=sort_by,
             )

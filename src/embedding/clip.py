@@ -40,14 +40,19 @@ class ClipEmbeddingModel(EmbeddingModel):
 
     def model_load(self, image_usage: bool = False):
         self.logger.info(f"Loading CLIP model from {self.clip_model.model_name}")
-        self.model = CLIPModel.from_pretrained(
-            self.clip_model.model_name,
-        ).to(self.device)
-        self.tokenizer = CLIPTokenizerFast.from_pretrained(self.clip_model.model_name)
+        try:
+            self.model = CLIPModel.from_pretrained(
+                self.clip_model.model_name,
+            ).to(self.device)
+            self.tokenizer = CLIPTokenizerFast.from_pretrained(
+                self.clip_model.model_name
+            )
+        except Exception as e:
+            self.logger.error(f"Error loading CLIP model: {e}")
+            raise e
 
         # 디바이스 이동 전 상태 확인
         self.logger.info(f"Moving model to device: {self.device}")
-        self.model = self.model.to(self.device)
         self.model.eval()  # 평가 모드로 설정
 
         # 디바이스 이동 후 상태 확인

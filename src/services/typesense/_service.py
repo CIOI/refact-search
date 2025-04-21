@@ -32,6 +32,7 @@ class TypesenseService:
     def search(
         self,
         query: str,
+        mall_id: Optional[str] = None,
         query_by: Optional[str] = "name,description",
         filter_by: Optional[str] = None,
         sort_by: Optional[str] = None,
@@ -57,15 +58,13 @@ class TypesenseService:
                 search_parameters["filter_by"] = filter_by
             if sort_by:
                 search_parameters["sort_by"] = sort_by
-
+            mall_id = mall_id if mall_id else self.mall_id
             results = self.typesense_manager.search(
-                self.mall_id,
+                mall_id,
                 search_parameters,
             )
 
-            self.logger.info(
-                f"Search completed for query: {query} in mall: {self.mall_id}"
-            )
+            self.logger.info(f"Search completed for query: {query} in mall: {mall_id}")
             return results
         except Exception as e:
             self.logger.error(

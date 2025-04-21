@@ -26,19 +26,13 @@ Typesense와 Qdrant를 활용한 하이브리드 검색 시스템을 제공합�
 ## 실행 방법
 
 ### 1. 환경 설정
-```bash
-# .env 파일 생성
-cp .env.example .env
-```
+.env 파일을 root directory에 위치시켜주세요
+없다면 rhkr9693@gmail.com 으로 요청주세요
 
 ### 2. Docker 실행
 ```bash
 # 모든 서비스 실행
 docker-compose up -d
-
-# 특정 서비스만 실행
-docker-compose up -d typesense  # Typesense만 실행
-docker-compose up -d qdrant    # Qdrant만 실행
 ```
 
 ### 3. FastAPI 서버 실행

@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 class EmbeddingModel(ABC):
 
     @abstractmethod
-    def get_embedding(self, product: dict):
+    def get_text_embedding(self, product: dict):
         pass
 
     @abstractmethod

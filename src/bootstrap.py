@@ -6,6 +6,7 @@ from src.databases.schema import get_mall_schema
 from typing import List
 from src.services.typesense._service import TypesenseService
 from src.managers.typesense._manager import TypesenseManager
+from src.controllers import TypesenseController, QdrantController
 
 
 def create_app() -> FastAPI:
@@ -27,12 +28,19 @@ def create_collections(
         typesense_service.create_collection(mall_schema)
 
 
-def configure_routes(app: FastAPI, controller) -> FastAPI:
+def configure_routes(
+    app: FastAPI,
+    typesense_controller: TypesenseController,
+    qdrant_controller: QdrantController,
+) -> FastAPI:
 
-    app.include_router(
-        controller.register_routes(APIRouter()),
-        prefix="/search",
-    )
+    typesense_router = APIRouter(prefix="/search", tags=["Typesense"])
+    typesense_controller.register_routes(typesense_router)
+    app.include_router(typesense_router)
+
+    # qdrant_router = APIRouter(prefix="/qdrant", tags=["Qdrant"])
+    # qdrant_controller.register_routes(qdrant_router)
+    # app.include_router(qdrant_router)
 
     @app.get("/", tags=["Root"])
     async def read_root():
@@ -78,6 +86,7 @@ def bootstrap(application: Application):
         application (Application): 애플리케이션 컨테이너
     """
     logger = application.logger()
+    controller = application.controllers()
     mall_list = get_mall_list()
     logger.info(f"Malls: {mall_list}")
     typesense_service = application.services.typesense_service()
@@ -86,5 +95,9 @@ def bootstrap(application: Application):
     import_documents(typesense_manager, mall_list)
     logger.info(f"Typesense Collections: {typesense_manager.get_collection_list()}")
     app = create_app()
-    configure_routes(app, application.controllers().typesense_controller())
+    configure_routes(
+        app,
+        controller.typesense_controller(),
+        controller.qdrant_controller(),
+    )
     return app

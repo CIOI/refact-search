@@ -17,6 +17,7 @@ services:
       - "8100:8100"
     volumes:
       - ./src:/app/src
+      - ~/.cache/huggingface:/root/.cache/huggingface
     env_file:
       - .env
     depends_on:

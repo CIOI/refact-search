@@ -12,7 +12,7 @@ from ._environment import Environment
 from ._logger import LoggerService, get_logger
 from src.managers import TypesenseManager, QdrantManager
 from src.services import TypesenseService, QdrantService
-from src.controllers import TypesenseController
+from src.controllers import TypesenseController, QdrantController
 from src.embedding.clip import ClipEmbeddingModel
 from src.embedding.schma import fashion_clip
 
@@ -58,6 +58,11 @@ class ControllersContainer(DeclarativeContainer):
     typesense_controller: Singleton[TypesenseController] = Singleton(
         TypesenseController,
         service=services.typesense_service,
+        logger=logger,
+    )
+    qdrant_controller: Singleton[QdrantController] = Singleton(
+        QdrantController,
+        service=services.qdrant_service,
         logger=logger,
     )
 

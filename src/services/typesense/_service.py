@@ -139,12 +139,23 @@ class TypesenseService:
                     collection_name,
                     documents,
                 )
-            self.logger.info(f"Documents imported successfully to {collection_name}")
+            self.logger.info(f"{collection_name} collection added to typesense")
         except Exception as e:
             self.logger.error(
                 f"Failed to import documents to {collection_name}: {str(e)}"
             )
             raise
+
+    def check_data_count(self) -> list[dict]:
+        """데이터 현황 확인"""
+        data_counts = []
+        for collection in self.typesense_manager.get_collection_list():
+            data_count = {
+                "collection_name": collection,
+                "document_count": self.typesense_manager.get_document_count(collection),
+            }
+            data_counts.append(data_count)
+        return data_counts
 
     @staticmethod
     def _schema_builder(mall_schema: MallSchema) -> CollectionCreateSchema:

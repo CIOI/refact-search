@@ -41,6 +41,13 @@ class TypesenseController:
             summary="검색어 자동완성",
             description="검색어에 대한 자동완성 제안을 제공합니다.",
         )
+        router.add_api_route(
+            path="/data-count",
+            endpoint=self.check_data_count,
+            methods=["GET"],
+            summary="데이터 현황",
+            description="데이터 현황을 확인합니다.",
+        )
 
         return router
 
@@ -99,3 +106,7 @@ class TypesenseController:
             raise HTTPException(
                 status_code=500, detail=f"Failed to get suggestions: {str(e)}"
             )
+
+    def check_data_count(self):
+        """데이터 개수 확인"""
+        return self.service.check_data_count()

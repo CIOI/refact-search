@@ -117,3 +117,6 @@ class QdrantManager:
 
     async def delete_collection(self, collection_name: str):
         await self.client.delete_collection(collection_name=collection_name)
+
+    def get_document_count(self, collection_name: str) -> int:
+        return self.sync_client.get_collection(collection_name).points_count

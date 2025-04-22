@@ -106,6 +106,14 @@ class TypesenseManager:
         """
         return [collection["name"] for collection in self.client.collections.retrieve()]
 
+    def get_document_count(self, collection_name: str) -> int:
+        """Collection 내 문서 수를 가져옵니다.
+
+        Args:
+            collection_name (str): Collection 이름
+        """
+        return self.client.collections[collection_name].retrieve()["num_documents"]
+
     def search(
         self,
         collection_name: str,

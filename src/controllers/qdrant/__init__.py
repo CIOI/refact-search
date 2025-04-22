@@ -1,2 +1,2 @@
 # flake8: noqa
-from .controller import QdrantController
+from ._controller import QdrantController

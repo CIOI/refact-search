@@ -63,7 +63,7 @@ class QdrantService:
             )
             raise
 
-    async def import_documents(self, mall_id: str, batch_size: int = 100) -> None:
+    async def import_documents(self, mall_id: str, batch_size: int = 1000) -> None:
         """문서를 가져옵니다.
         Args:
             mall_id (str): 몰 ID (mall1 또는 mall2)
@@ -110,6 +110,34 @@ class QdrantService:
                                 qdrant_items,
                             )
                             batch_documents = []
+
+                # 마지막 배치 처리
+                if batch_documents:
+                    embeddings = self.embedding_model.get_text_embeddings_batch(
+                        [
+                            self._get_document_text(
+                                document, mall_schema.embedding_fields
+                            )
+                            for document in batch_documents
+                        ]
+                    )
+                    qdrant_items = [
+                        QdrantItem(
+                            id=int(document[mall_schema.id_field]),
+                            vector=embedding.tolist(),
+                            payload={
+                                field: document[field]
+                                for field in mall_schema.payload_fields
+                            },
+                        )
+                        for document, embedding in zip(batch_documents, embeddings)
+                    ]
+                    await self.qdrant_manager.add_vectors_batch(
+                        mall_id,
+                        qdrant_items,
+                    )
+
+            self.logger.info(f"{mall_id} collection added to qdrant")
         except Exception as e:
             self.logger.error(
                 f"Failed to import documents for mall: {mall_id}, error: {str(e)}"
@@ -134,3 +162,16 @@ class QdrantService:
             if field in document:
                 texts.append(str(document[field]))
         return " ".join(texts)
+
+    def check_data_count(self) -> list[dict]:
+        """데이터 현황 확인"""
+        data_counts = []
+        for collection in self.qdrant_manager.get_collection_list():
+            data_count = {
+                "collection_name": collection.name,
+                "document_count": self.qdrant_manager.get_document_count(
+                    collection.name
+                ),
+            }
+            data_counts.append(data_count)
+        return data_counts

@@ -177,4 +177,4 @@ cython_debug/
 typesense-data/
 
 # Qdrant
-qdrant-storage/
+qdrant_storage/

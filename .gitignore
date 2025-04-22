@@ -176,3 +176,5 @@ cython_debug/
 # Typesense
 typesense-data/
 
+# Qdrant
+qdrant-storage/

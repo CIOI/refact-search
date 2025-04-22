@@ -23,52 +23,54 @@ Typesense와 Qdrant를 활용한 하이브리드 검색 시스템을 제공합�
 - **Typesense** (port: 8108): 키워드 기반 검색
 - **Qdrant** (port: 6333, 6334): 벡터 기반 검색
 
-## 실행 방법
+## Setup
 
 ### 1. 환경 설정
 .env 파일을 root directory에 위치시켜주세요
 없다면 rhkr9693@gmail.com 으로 요청주세요
 
-### 2. Docker 실행
+### 2. 의존성 설치
+```bash
+#poetry 로 의존성 설치
+poetry install --all-extras
+poetry shell #poetry version <2.0
+source .venv/bin/actiavte #poetry version >=2.0
+```
+
+## 실행 방법
+
+### 1. Docker Compose로 전체 서비스 실행
 ```bash
 # 모든 서비스 실행
 docker-compose up -d
 ```
 
-### 3. FastAPI 서버 실행
-API 서버는 docker compose 과정에서 실행됩니다.
+### 2. 데이터 초기화 (첫 실행 시에만)
+```bash
+# Typesense와 Qdrant 서버가 실행된 상태에서 실행
+python index.py
+```
 
+### 3. 데이터 확인
+데이터가 정상적으로 추가되었는지 확인하려면 다음 API를 호출하세요:
+- Qdrant 데이터 확인: http://localhost:8100/qdrant/data-count
+- Typesense 데이터 확인: http://localhost:8100/typesense/data-count
+
+### 4. API 문서 확인
 - API 문서: http://localhost:8100/docs
 
-### 4. Streamlit 대시보드 실행
-### 4-1. local 의존성 설치
-streamlit 을 실행하기 위해서는 로컬에 의존성이 설치되어있어야합니다.
+### 5. Streamlit 대시보드 실행
 ```bash
-#poetry 로 의존성 설치
-poetry install --all-extras
-poetry shell #poetry version <2.0
-
-source .venv/bin/actiavte #poetry version >=2.0
-
-```
-
-### 4-2. streamlit 실행
-streamlit 실행
-
-```bash
+# 기본 실행
 streamlit run src/streamlit.py
-```
 
-### company_a를 8501 포트에서 실행
-```bash
+# 수평적 확장 테스트
+# company_a를 8501 포트에서 실행
 streamlit run src/streamlit.py --server.port 8501 --mall_id company_a
-```
 
-### 다른 터미널에서 company_b를 8502 포트에서 실행
-```bash
+# 다른 터미널에서 company_b를 8502 포트에서 실행
 streamlit run src/streamlit.py --server.port 8502 --mall_id company_b
 ```
-- 대시보드: http://localhost:8501
 
 ## 서비스 포트
 - FastAPI: 8100

@@ -23,6 +23,7 @@ transformers = "^4.51.3"
 torch = "^2.6.0"
 pillow = "^11.2.1"
 poethepoet = "^0.33.1"
+streamlit = "^1.44.1"
 
 [tool.poe.tasks]
 test = "python -m pytest"

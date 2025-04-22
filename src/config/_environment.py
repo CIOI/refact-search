@@ -10,7 +10,8 @@ class Environment(BaseSettings):
     TYPESENSE_PORT: str
     TYPESENSE_PROTOCOL: str
     LOG_LEVEL: str
-    QDRANT_URL: str
+    QDRANT_HOST: str
+    QDRANT_PORT: str
     # CLIP 모델 설정
     MODEL_NAME: str = "patrickjohncyh/fashion-clip"
     TOKENIZER_NAME: str = "patrickjohncyh/fashion-clip"

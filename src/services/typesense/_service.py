@@ -1,10 +1,11 @@
-# src/services/_service.py
 from typing import Dict, List, Optional
 from src.managers.typesense import TypesenseManager
 from src.config._logger import LoggerService
 from src.databases.schema import MallSchema, get_mall_schema
 from typesense.types.collection import CollectionCreateSchema
 from typesense.types.document import RequiredSearchParameters
+from pathlib import Path
+import json
 
 
 class TypesenseService:
@@ -95,11 +96,55 @@ class TypesenseService:
             )
             raise
 
-    def create_collection(self, mall_schema: MallSchema) -> None:
+    def create_collection(self, mall_id: str) -> None:
         """Typesense 컬렉션 생성"""
+        mall_schema = get_mall_schema(mall_id)
         self.typesense_manager.create_collection(
             TypesenseService._schema_builder(mall_schema)
         )
+
+    def import_jsonl_documents(self, collection_name: str) -> None:
+        """문서를 일괄적으로 가져옵니다.
+
+        Args:
+            collection_name (str): 대상 Collection 이름
+            fixture_path (Path): JSONL 파일 경로
+
+        Raises:
+            FileNotFoundError: 파일이 존재하지 않는 경우
+            Exception: 가져오기 실패 시
+        """
+        db_path = Path(__file__).parent.parent.parent / "databases" / "items"
+        fixture_path = db_path / f"{collection_name}.jsonl"
+        if not fixture_path.exists():
+            raise FileNotFoundError(f"Fixture file not found: {fixture_path}")
+
+        try:
+            # 청크 단위로 처리하여 메모리 사용량 제한
+            batch_size = 1000  # 1000개씩 처리
+            documents = []
+            with open(fixture_path, "r", encoding="utf-8") as jsonl_file:
+                for line in jsonl_file:
+                    if line.strip():  # 빈 줄 제외
+                        document = json.loads(line)  # JSON 파싱
+                        documents.append(document)  # JSON 객체 추가
+                        if len(documents) >= batch_size:
+                            self.typesense_manager.upsert_batch(
+                                collection_name,
+                                documents,
+                            )
+                            documents = []
+            if documents:
+                self.typesense_manager.upsert_batch(
+                    collection_name,
+                    documents,
+                )
+            self.logger.info(f"Documents imported successfully to {collection_name}")
+        except Exception as e:
+            self.logger.error(
+                f"Failed to import documents to {collection_name}: {str(e)}"
+            )
+            raise
 
     @staticmethod
     def _schema_builder(mall_schema: MallSchema) -> CollectionCreateSchema:

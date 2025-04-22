@@ -23,4 +23,4 @@ COPY .env .env
 EXPOSE 8100
 
 # 실행 명령
-CMD ["poetry", "run", "python", "-m", "src.app"]
+CMD ["poetry", "run", "python", "-m", "src.main"]

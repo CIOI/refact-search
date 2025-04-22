@@ -17,6 +17,9 @@ class MallSchema(BaseModel):
     facet_fields: List[str] = []
     default_sorting_field: str = "product_id"
 
+    # embedding 관련 설정
+    embedding_fields: List[str] = ["name", "description"]
+
     # Qdrant 관련 설정
     id_field: str = "product_id"
 
@@ -38,7 +41,7 @@ class MallSchema(BaseModel):
         }
 
 
-def get_mall_schema(company_name: str) -> MallSchema:
+def get_mall_schema(mall_id: str) -> MallSchema:
     """
     JSON 파일에서 몰 스키마를 생성합니다.
 
@@ -54,7 +57,7 @@ def get_mall_schema(company_name: str) -> MallSchema:
     """
     app_dir = Path(__file__).parent.parent  # src 디렉토리
     try:
-        json_path = Path(app_dir, "databases", "malls", f"{company_name}.json")
+        json_path = Path(app_dir, "databases", "malls", f"{mall_id}.json")
         with open(json_path, "r", encoding="utf-8") as f:
             data = json.load(f)
         return MallSchema(**data)
@@ -121,3 +124,12 @@ def create_mall_document(
         return str(json_path)
     except Exception as e:
         raise OSError(f"JSON 파일 생성 중 오류 발생: {str(e)}")
+
+
+def get_mall_list():
+    current_dir = Path(__file__).parent
+    malls_dir = Path(current_dir, "malls")
+
+    # JSON 파일들의 이름을 가져와서 .json 확장자 제거
+    mall_list = [path.stem for path in malls_dir.glob("*.json")]
+    return mall_list

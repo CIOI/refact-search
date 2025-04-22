@@ -1,4 +1,4 @@
-from qdrant_client import AsyncQdrantClient, models
+from qdrant_client import AsyncQdrantClient, QdrantClient, models
 from qdrant_client.models import (
     VectorParams,
     PointStruct,
@@ -7,13 +7,14 @@ from qdrant_client.models import (
 from qdrant_client.http.models import UpdateResult
 from src.config._logger import LoggerService
 from src.config._environment import Environment
+from src.databases.qdrant import QdrantItem
 
 
 class QdrantManager:
     """Qdrant 클라이언트를 관리하는 매니저 클래스
 
     Attributes:
-        qdrant_url (str): Qdrant 서버 URL
+        environment (Environment): 환경 설정
         logger (LoggerService): 로깅 서비스
     """
 
@@ -22,36 +23,64 @@ class QdrantManager:
         environment: Environment,
         logger: LoggerService,
     ):
-        self.client = AsyncQdrantClient(url=environment.QDRANT_URL)
+        self.sync_client = QdrantClient(
+            url=f"http://{environment.QDRANT_HOST}:{environment.QDRANT_PORT}",
+        )
+        self.client = AsyncQdrantClient(
+            url=f"http://{environment.QDRANT_HOST}:{environment.QDRANT_PORT}",
+        )
         self.vector_size = environment.VECTOR_SIZE
         self.logger = logger
 
-    async def create_collection(self, collection_name: str):
-        if not await self.client.collection_exists(collection_name):
-            await self.client.create_collection(
-                collection_name=collection_name,
-                vectors_config=VectorParams(
-                    size=self.vector_size,
-                    distance=models.Distance.COSINE,
-                ),
+    async def create_collection(self, collection_name: str, vector_size: int):
+        if await self.client.collection_exists(collection_name):
+            self.logger.warning(
+                f"Collection {collection_name} already exists in Qdrant"
             )
+            return
+
+        await self.client.create_collection(
+            collection_name=collection_name,
+            vectors_config=VectorParams(
+                size=vector_size,
+                distance=models.Distance.COSINE,
+            ),
+        )
 
     async def add_vector(
         self,
-        id: str,
         collection_name: str,
-        vector: list[float],
-        payload: dict,
+        item: QdrantItem,
     ) -> UpdateResult:
         response = await self.client.upsert(
             collection_name=collection_name,
             points=[
                 PointStruct(
-                    id=id,
-                    vector=vector,
-                    payload=payload,
+                    id=item.id,
+                    vector=item.vector,
+                    payload=item.payload,
                 ),
             ],
+        )
+        return response
+
+    async def add_vectors_batch(
+        self,
+        collection_name: str,
+        items: list[QdrantItem],
+    ) -> UpdateResult:
+        points = [
+            PointStruct(
+                id=item.id,
+                vector=item.vector,
+                payload=item.payload,
+            )
+            for item in items
+        ]
+
+        response = await self.client.upsert(
+            collection_name=collection_name,
+            points=points,
         )
         return response
 
@@ -80,8 +109,8 @@ class QdrantManager:
         # TODO: 필터 조건 추가
         pass
 
-    async def get_collection_list(self):
-        return await self.client.get_collections()
+    def get_collection_list(self) -> list[str]:
+        return self.sync_client.get_collections().collections
 
     async def collection_exists(self, collection_name: str):
         return await self.client.collection_exists(collection_name)

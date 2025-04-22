@@ -36,16 +36,25 @@ docker-compose up -d
 ```
 
 ### 3. FastAPI 서버 실행
-```bash
-# 직접 실행
-python -m src.app
+API 서버는 docker compose 과정에서 실행됩니다.
 
-# 또는 Docker로 실행
-docker-compose up -d api
-```
 - API 문서: http://localhost:8100/docs
 
 ### 4. Streamlit 대시보드 실행
+### 4-1. local 의존성 설치
+streamlit 을 실행하기 위해서는 로컬에 의존성이 설치되어있어야합니다.
+```bash
+#poetry 로 의존성 설치
+poetry install --all-extras
+poetry shell #poetry version <2.0
+
+source .venv/bin/actiavte #poetry version >=2.0
+
+```
+
+### 4-2. streamlit 실행
+streamlit 실행
+
 ```bash
 streamlit run src/streamlit.py
 ```
@@ -56,7 +65,7 @@ streamlit run src/streamlit.py --server.port 8501 --mall_id company_a
 ```
 
 ### 다른 터미널에서 company_b를 8502 포트에서 실행
-```
+```bash
 streamlit run src/streamlit.py --server.port 8502 --mall_id company_b
 ```
 - 대시보드: http://localhost:8501

@@ -1,11 +1,7 @@
 from src.config._container import Application
-from pathlib import Path
 from fastapi import FastAPI, APIRouter
 import datetime
-from src.databases.schema import get_mall_schema
-from typing import List
-from src.services.typesense._service import TypesenseService
-from src.managers.typesense._manager import TypesenseManager
+from src.databases.schema import get_mall_list
 from src.controllers import TypesenseController, QdrantController
 
 
@@ -19,28 +15,19 @@ def create_app() -> FastAPI:
     )
 
 
-def create_collections(
-    typesense_service: TypesenseService,
-    mall_list: List[str],
-):
-    for mall in mall_list:
-        mall_schema = get_mall_schema(mall)
-        typesense_service.create_collection(mall_schema)
-
-
 def configure_routes(
     app: FastAPI,
     typesense_controller: TypesenseController,
     qdrant_controller: QdrantController,
 ) -> FastAPI:
 
-    typesense_router = APIRouter(prefix="/search", tags=["Typesense"])
+    typesense_router = APIRouter(prefix="/typesense", tags=["Typesense"])
     typesense_controller.register_routes(typesense_router)
     app.include_router(typesense_router)
 
-    # qdrant_router = APIRouter(prefix="/qdrant", tags=["Qdrant"])
-    # qdrant_controller.register_routes(qdrant_router)
-    # app.include_router(qdrant_router)
+    qdrant_router = APIRouter(prefix="/qdrant", tags=["Qdrant"])
+    qdrant_controller.register_routes(qdrant_router)
+    app.include_router(qdrant_router)
 
     @app.get("/", tags=["Root"])
     async def read_root():
@@ -63,22 +50,6 @@ def configure_routes(
     return app
 
 
-def get_mall_list():
-    current_dir = Path(__file__).parent
-    malls_dir = Path(current_dir, "databases", "malls")
-
-    # JSON 파일들의 이름을 가져와서 .json 확장자 제거
-    mall_list = [path.stem for path in malls_dir.glob("*.json")]
-    return mall_list
-
-
-def import_documents(typesense_manager: TypesenseManager, mall_list: List[str]):
-    for mall in mall_list:
-        current_dir = Path(__file__).parent
-        fixture_path = Path(current_dir, "databases", "items", f"{mall}.jsonl")
-        typesense_manager.import_documents(mall, fixture_path)
-
-
 def bootstrap(application: Application):
     """Typesense 컬렉션을 생성하고 데이터를 import합니다.
 
@@ -87,13 +58,16 @@ def bootstrap(application: Application):
     """
     logger = application.logger()
     controller = application.controllers()
+    typesense_manager = application.managers.typesense_manager()
+    qdrant_manager = application.managers.qdrant_manager()
+    typesense_collections = typesense_manager.get_collection_list()
+    qdrant_collections = qdrant_manager.get_collection_list()
     mall_list = get_mall_list()
     logger.info(f"Malls: {mall_list}")
-    typesense_service = application.services.typesense_service()
-    typesense_manager = application.managers.typesense_manager()
-    create_collections(typesense_service, mall_list)
-    import_documents(typesense_manager, mall_list)
-    logger.info(f"Typesense Collections: {typesense_manager.get_collection_list()}")
+    logger.info(f"Typesense Collections: {typesense_collections}")
+    logger.info(f"Qdrant Collections: {qdrant_collections}")
+    if any(mall not in typesense_collections for mall in mall_list):
+        logger.warning(f"index.py 를 통해 {mall_list} 컬렉션을 추가해 주세요")
     app = create_app()
     configure_routes(
         app,

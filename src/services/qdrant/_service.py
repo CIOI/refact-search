@@ -1,8 +1,12 @@
 # src/services/_service.py
-from typing import Dict, List, Optional
+from typing import Dict
 from src.managers.qdrant import QdrantManager
 from src.config._logger import LoggerService
 from src.embedding import ClipEmbeddingModel
+from pathlib import Path
+import json
+from src.databases.schema import get_mall_schema
+from src.databases.qdrant import QdrantItem
 
 
 class QdrantService:
@@ -23,14 +27,11 @@ class QdrantService:
         self.embedding_model = embedding_model
         self.logger = logger
 
-    def search(
+    async def search(
         self,
         query: str,
         mall_id: str,
-        page: int = 1,
-        per_page: int = 10,
-        filter_by: Optional[str] = None,
-        sort_by: Optional[str] = None,
+        limit: int = 10,
     ) -> Dict:
         """상품 검색
 
@@ -46,21 +47,13 @@ class QdrantService:
             Dict: 검색 결과
         """
         try:
-            search_parameters = {
-                "q": query,
-                "query_by": "name,description",
-                "page": page,
-                "per_page": per_page,
-            }
-
-            if filter_by:
-                search_parameters["filter_by"] = filter_by
-            if sort_by:
-                search_parameters["sort_by"] = sort_by
-
-            results = self.typesense_manager.client.collections[
-                mall_id
-            ].documents.search(search_parameters)
+            results = await self.qdrant_manager.search(
+                collection_name=mall_id,
+                query_vector=self.embedding_model.get_text_embedding(query)
+                .squeeze()
+                .tolist(),
+                limit=limit,
+            )
 
             self.logger.info(f"Search completed for query: {query} in mall: {mall_id}")
             return results
@@ -70,30 +63,74 @@ class QdrantService:
             )
             raise
 
-    def get_suggestions(self, query: str, mall_id: str) -> List[str]:
-        """검색어 자동완성
-
+    async def import_documents(self, mall_id: str, batch_size: int = 100) -> None:
+        """문서를 가져옵니다.
         Args:
-            query (str): 검색어
             mall_id (str): 몰 ID (mall1 또는 mall2)
-
-        Returns:
-            List[str]: 자동완성 제안 목록
+            batch_size (int): 배치 크기
         """
-        try:
-            results = self.typesense_manager.client.collections[
-                mall_id
-            ].documents.search(
-                {"q": query, "query_by": "name", "per_page": 5, "prefix": True}
-            )
+        mall_schema = get_mall_schema(mall_id)
+        db_path = Path(__file__).parent.parent.parent / "databases" / "items"
+        fixture_path = db_path / f"{mall_id}.jsonl"
+        if not fixture_path.exists():
+            raise FileNotFoundError(f"Fixture file not found: {fixture_path}")
 
-            suggestions = [hit["document"]["name"] for hit in results["hits"]]
-            self.logger.info(
-                f"Suggestions generated for query: {query} in mall: {mall_id}"
-            )
-            return suggestions
+        try:
+            batch_documents = []
+            with open(fixture_path, "r", encoding="utf-8") as jsonl_file:
+                for line in jsonl_file:
+                    if line.strip():  # 빈 줄 제외
+                        document = json.loads(line)  # JSON 파싱
+                        batch_documents.append(document)  # JSON 객체 추가
+                        if len(batch_documents) >= batch_size:
+                            # 배치로 임베딩 생성
+                            embeddings = self.embedding_model.get_text_embeddings_batch(
+                                [
+                                    self._get_document_text(
+                                        document, mall_schema.embedding_fields
+                                    )
+                                    for document in batch_documents
+                                ]
+                            )
+                            qdrant_items = [
+                                QdrantItem(
+                                    id=int(document[mall_schema.id_field]),
+                                    vector=embedding.tolist(),
+                                    payload={
+                                        field: document[field]
+                                        for field in mall_schema.payload_fields
+                                    },
+                                )
+                                for document, embedding in zip(
+                                    batch_documents, embeddings
+                                )
+                            ]
+                            await self.qdrant_manager.add_vectors_batch(
+                                mall_id,
+                                qdrant_items,
+                            )
+                            batch_documents = []
         except Exception as e:
             self.logger.error(
-                f"Failed to generate suggestions for query: {query} in mall: {mall_id}, error: {str(e)}"
+                f"Failed to import documents for mall: {mall_id}, error: {str(e)}"
             )
             raise
+
+    async def create_collection(self, mall_id: str) -> None:
+        """컬렉션 생성
+
+        Args:
+            mall_id (str): 몰 ID (mall1 또는 mall2)
+        """
+        await self.qdrant_manager.create_collection(
+            mall_id,
+            self.embedding_model.vector_size,
+        )
+
+    def _get_document_text(self, document: dict, embedding_fields: list[str]) -> str:
+        """문서에서 임베딩할 텍스트 필드들을 결합"""
+        texts = []
+        for field in embedding_fields:
+            if field in document:
+                texts.append(str(document[field]))
+        return " ".join(texts)

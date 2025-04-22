@@ -1,33 +1,44 @@
 import streamlit as st
 from src.config._container import Application
 from src.search import SearchService
+from src.config.helpers._override import mock_overrides
+from argparse import ArgumentParser
+import sys
+import asyncio
 
-# 컨테이너 초기화
-container = Application()
-
-# 명령줄 인자 설정
+parser = ArgumentParser()
+parser.add_argument("--mall_id", default="company_a", help="Mall ID to search")
+args = parser.parse_args(sys.argv[1:])  # streamlit 관련 인자는 제외하고 파싱
+mall_id = args.mall_id or "company_a"  # 기본값 설정
+# 전역 범위에서 한 번만 초기화
+application = Application()
+application = mock_overrides(application)
+# 페이지 설정
 st.set_page_config(page_title="패션 검색엔진")
-mall_id = st.get_option("mall_id")
 
-if not mall_id:
-    mall_id = "company_a"  # 기본값
+
+def parse_args():
+    parser = ArgumentParser()
+    parser.add_argument("--mall_id", default="company_a", help="Mall ID to search")
+    # streamlit의 인자는 무시하고 스크립트의 인자만 파싱
+    return parser.parse_args(sys.argv[1:])
 
 
 # 서비스 초기화
 @st.cache_resource
-def get_search_service(mall_id: str):
+def get_search_service():
     return SearchService(
-        typesense_client=container.typesense_client(),
-        embedding_service=container.embedding_service(),
-        qrant_manager=container.qrant_manager(),
+        typesense_service=application.services.typesense_service(),
+        embedding_service=application.embedding_model(),
+        qdrant_service=application.services.qdrant_service(),
         mall_id=mall_id,
+        logger=application.logger(),
     )
 
 
-def main():
+async def main():
     st.title("🔍 패션 검색엔진")
     st.write("찾고계신 패션 아이템을 입력해 주세요.")
-
     # 서비스 가져오기
     search_service = get_search_service()
 
@@ -37,8 +48,8 @@ def main():
         st.write(f"Searching for: **{query}**")
 
         # 검색 실행
-        results = search_service.search(query)
-
+        results = await search_service.search(query)
+        print(results)
         st.write("### 🎯 검색결과:")
 
         # 결과 표시
@@ -64,4 +75,4 @@ def display_product(column, product):
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

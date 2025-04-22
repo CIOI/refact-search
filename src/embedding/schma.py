@@ -7,6 +7,7 @@ class ClipModel(BaseModel):
     max_length: int
     padding: str
     truncation: bool
+    vector_size: int
 
 
 fashion_clip = ClipModel(
@@ -15,4 +16,5 @@ fashion_clip = ClipModel(
     max_length=512,
     padding="max_length",
     truncation=True,
+    vector_size=512,
 )

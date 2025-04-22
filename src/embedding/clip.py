@@ -2,7 +2,6 @@ from typing import Optional, Union
 import torch
 from transformers import AutoProcessor
 from PIL import Image
-from src.utils.embedding_utils import get_combined_text
 from src.config._logger import LoggerService
 from .schma import ClipModel
 from transformers import CLIPProcessor, CLIPModel
@@ -31,15 +30,17 @@ class ClipEmbeddingModel(EmbeddingModel):
             if torch.cuda.is_available()
             else "mps" if torch.backends.mps.is_available() else "cpu"
         )
-        self.logger.info(f"Using device: {self.device}")
+        self.logger.info(f"Embedding Model Using device: {self.device}")
         self.clip_model = clip_model
         self.model = None
         self.processor = None
         self.tokenizer = None
+        self.vector_size = None
         self.model_load()
 
     def model_load(self, image_usage: bool = False):
         self.logger.info(f"Loading CLIP model from {self.clip_model.model_name}")
+        self.vector_size = self.clip_model.vector_size
         try:
             self.model = CLIPModel.from_pretrained(
                 self.clip_model.model_name,
@@ -62,11 +63,11 @@ class ClipEmbeddingModel(EmbeddingModel):
 
         if image_usage:
             self.processor = CLIPProcessor.from_pretrained(self.clip_model.model_name)
-            self.logger.info(f"Processor loaded successfully")
+            self.logger.info("Processor loaded successfully")
 
     def get_text_embedding(
         self,
-        product: dict,
+        text: str,
         max_length: int = 77,
         return_tensors: str = "pt",
     ) -> torch.Tensor:
@@ -81,19 +82,50 @@ class ClipEmbeddingModel(EmbeddingModel):
         Returns:
             텍스트 임베딩 텐서
         """
-        text = get_combined_text(product)
         inputs = self.tokenizer(
-            text, padding=True, truncation=True, max_length=77, return_tensors="pt"
+            text,
+            padding=True,
+            truncation=True,
+            max_length=max_length,
+            return_tensors=return_tensors,
         ).to(self.device)
 
         with torch.no_grad():
-            text_outputs = self.model.text_model(**inputs)
-            self.logger.info(
-                f"Text encoder sample values: {text_outputs.last_hidden_state[0, 0, :5]}"
-            )
-            norm = text_features.norm(dim=-1, keepdim=True)
-            self.logger.info(f"Norm value: {norm.item()}")
-            text_features = text_features / norm
+            text_outputs = self.model.get_text_features(**inputs)
+            norm = text_outputs.norm(dim=-1, keepdim=True)
+            text_features = text_outputs / norm
+
+        return text_features
+
+    def get_text_embeddings_batch(
+        self,
+        texts: list[str],
+        max_length: int = 77,
+        return_tensors: str = "pt",
+    ) -> torch.Tensor:
+        """
+        여러 텍스트의 임베딩을 한번에 생성합니다.
+
+        Args:
+            products: 제품 정보 딕셔너리 리스트
+            max_length: 최대 시퀀스 길이
+            return_tensors: 반환 텐서 타입
+
+        Returns:
+            텍스트 임베딩 텐서들
+        """
+        inputs = self.tokenizer(
+            texts,
+            padding=True,
+            truncation=True,
+            max_length=max_length,
+            return_tensors=return_tensors,
+        ).to(self.device)
+
+        with torch.no_grad():
+            text_outputs = self.model.get_text_features(**inputs)
+            norm = text_outputs.norm(dim=-1, keepdim=True)
+            text_features = text_outputs / norm
 
         return text_features
 
@@ -123,13 +155,3 @@ class ClipEmbeddingModel(EmbeddingModel):
             image_embeddings = self.model.get_image_features(**inputs)
 
         return image_embeddings
-
-    def get_query_embedding(self, text):
-        tokenized_text = self.tokenizer(
-            text, truncation=True, max_length=75, return_tensors="pt"
-        )
-        tokens = tokenized_text["input_ids"].to(self.device)
-
-        with torch.no_grad():
-            query_embedding = self.model.get_text_features(tokens)
-        return query_embedding.cpu().numpy()

@@ -2,7 +2,6 @@ from typesense import Client
 from src.config._environment import Environment
 from src.config._logger import LoggerService
 from typing import Optional, List
-from pathlib import Path
 from typesense.types.collection import CollectionCreateSchema
 from typesense.types.document import SearchParameters, SearchResponse
 
@@ -53,8 +52,10 @@ class TypesenseManager:
         try:
             collections = self.get_collection_list()
             if schema["name"] in collections:
-                self.logger.warning(f"Collection {schema['name']} already exists")
-                self.delete_collection(schema["name"])
+                self.logger.warning(
+                    f"Collection {schema['name']} already exists in Typesense"
+                )
+                return
 
             self.client.collections.create(schema)
             self.logger.info(f"Collection {schema['name']} created successfully")
@@ -77,34 +78,25 @@ class TypesenseManager:
             )
             raise
 
-    def import_documents(self, collection_name: str, fixture_path: Path) -> None:
-        """문서를 일괄적으로 가져옵니다.
+    def upsert(self, collection_name: str, document: dict) -> None:
+        """문서를 추가합니다.
 
         Args:
             collection_name (str): 대상 Collection 이름
-            fixture_path (Path): JSONL 파일 경로
-
-        Raises:
-            FileNotFoundError: 파일이 존재하지 않는 경우
-            Exception: 가져오기 실패 시
+            document (dict): 문서
         """
-        if not fixture_path.exists():
-            raise FileNotFoundError(f"Fixture file not found: {fixture_path}")
+        self.client.collections[collection_name].documents.upsert(document)
 
-        try:
-            # 청크 단위로 처리하여 메모리 사용량 제한
-            chunk_size = 1024 * 1024  # 1MB
-            with open(fixture_path, "rb") as jsonl_file:
-                while chunk := jsonl_file.read(chunk_size):
-                    self.client.collections[collection_name].documents.import_(
-                        chunk, {"action": "create"}
-                    )
-            self.logger.info(f"Documents imported successfully to {collection_name}")
-        except Exception as e:
-            self.logger.error(
-                f"Failed to import documents to {collection_name}: {str(e)}"
-            )
-            raise
+    def upsert_batch(self, collection_name: str, documents: list[dict]) -> None:
+        """문서를 일괄적으로추가합니다..
+
+        Args:
+            collection_name (str): 대상 Collection 이름
+            documents (list[dict]): 문서 리스트
+        """
+        self.client.collections[collection_name].documents.import_(
+            documents, {"action": "create"}
+        )
 
     def get_collection_list(self) -> List[str]:
         """Collection 목록을 가져옵니다.

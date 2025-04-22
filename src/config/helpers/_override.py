@@ -13,6 +13,7 @@ def mock_overrides(application: "Application") -> "Application":
     overridden_env = original_env.model_copy(
         update={
             "TYPESENSE_HOST": "localhost",
+            "QDRANT_HOST": "localhost",
         }
     )
     # 오버라이드된 환경 설정

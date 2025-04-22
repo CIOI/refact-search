@@ -18,6 +18,7 @@ Typesense와 Qdrant를 활용한 하이브리드 검색 시스템을 제공합�
 - 통합 검색 인터페이스
 - 실시간 검색 결과 시각화
 - 이미지 및 텍스트 검색 지원
+- qdrant 와 typesense 의 다중 mall 지원 테스트
 
 ### 3. 검색 엔진
 - **Typesense** (port: 8108): 키워드 기반 검색
@@ -66,10 +67,10 @@ streamlit run src/streamlit.py
 
 # 수평적 확장 테스트
 # company_a를 8501 포트에서 실행
-streamlit run src/streamlit.py --server.port 8501 --mall_id company_a
+streamlit run streamlit.py --server.port 8501 -- --mall_id company_a
 
 # 다른 터미널에서 company_b를 8502 포트에서 실행
-streamlit run src/streamlit.py --server.port 8502 --mall_id company_b
+streamlit run streamlit.py --server.port 8502 -- --mall_id company_b
 ```
 
 ## 서비스 포트

@@ -49,22 +49,33 @@ async def main():
 
         # 검색 실행
         results = await search_service.search(query)
-        print(results)
-        st.write("### 🎯 검색결과:")
 
-        # 결과 표시
-        for i in range(0, len(results), 2):
-            cols = st.columns(2)
+        # Typesense 결과
+        st.write("### 🔤 Typesense 검색결과:")
+        display_results(results["typesense"])
 
-            # 왼쪽 열
-            if i < len(results):
-                product = results[i]
-                display_product(cols[0], product)
+        # Qdrant 결과
+        st.write("### 🎯 Qdrant 검색결과:")
+        display_results(results["qdrant"])
 
-            # 오른쪽 열
-            if i + 1 < len(results):
-                product = results[i + 1]
-                display_product(cols[1], product)
+        # 통합 결과
+        st.write("### 🔄 통합 검색결과:")
+        display_results(results["merged"])
+
+
+def display_results(results):
+    for i in range(0, len(results), 2):
+        cols = st.columns(2)
+
+        # 왼쪽 열
+        if i < len(results):
+            product = results[i]
+            display_product(cols[0], product)
+
+        # 오른쪽 열
+        if i + 1 < len(results):
+            product = results[i + 1]
+            display_product(cols[1], product)
 
 
 def display_product(column, product):

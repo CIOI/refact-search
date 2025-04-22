@@ -28,9 +28,13 @@ class SearchService:
         self.logger.info(f"Number of Qdrant results: {len(qdrant_results)}")
         self.logger.info(f"Typesense results: {typesense_ids}")
         self.logger.info(f"Qdrant results: {qdrant_ids}")
-        results = self._merge_results(typesense_results, qdrant_results)
-        self.logger.info(f"Number of merged results: {len(results)}")
-        return results
+
+        # 각각의 결과를 별도로 반환
+        return {
+            "typesense": [result[1] for result in typesense_results],
+            "qdrant": [result[1] for result in qdrant_results],
+            "merged": self._merge_results(typesense_results, qdrant_results),
+        }
 
     def _search_typesense(self, query: str) -> list[Tuple[int, dict]]:
         results = self.typesense_service.search(

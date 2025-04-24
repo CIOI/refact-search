@@ -13,8 +13,9 @@ from ._logger import LoggerService, get_logger
 from src.managers import TypesenseManager, QdrantManager
 from src.services import TypesenseService, QdrantService
 from src.controllers import TypesenseController, QdrantController
-from src.embedding.clip import ClipEmbeddingModel
+from src.embedding import ClipEmbeddingModel, E5EmbeddingModel
 from src.embedding.schma import fashion_clip
+from src.translator import GoogleTranslator
 
 
 class ManagersContainer(DeclarativeContainer):
@@ -38,11 +39,16 @@ class ServicesContainer(DeclarativeContainer):
     environment: Dependency[Environment] = Dependency(Environment)
     managers: Container[ManagersContainer] = Container(ManagersContainer)
     embedding_model: Dependency[ClipEmbeddingModel] = Dependency(ClipEmbeddingModel)
+    translator: Singleton[GoogleTranslator] = Singleton(
+        GoogleTranslator,
+        credentials_path=environment.provided.GOOGLE_APPLICATION_CREDENTIALS,
+    )
 
     typesense_service: Singleton[TypesenseService] = Singleton(
         TypesenseService,
         logger=logger,
         typesense_manager=managers.typesense_manager,
+        translator=translator,
     )
     qdrant_service: Singleton[QdrantService] = Singleton(
         QdrantService,
@@ -66,6 +72,14 @@ class ControllersContainer(DeclarativeContainer):
         logger=logger,
     )
 
+class EmbeddingContainer(DeclarativeContainer):
+    logger: Dependency[LoggerService] = Dependency(LoggerService)
+    environment: Dependency[Environment] = Dependency(Environment)
+    clip_embedding_model: Singleton[ClipEmbeddingModel] = Singleton(
+        ClipEmbeddingModel,
+        clip_model=fashion_clip,
+    )
+    e5_embedding_model: Singleton[E5EmbeddingModel] = Singleton(
 
 class Application(DeclarativeContainer):
     wiring_config = WiringConfiguration(

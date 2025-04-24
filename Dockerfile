@@ -16,6 +16,9 @@ COPY pyproject.toml poetry.lock ./
 # 의존성 설치
 RUN poetry install --no-interaction --no-ansi
 
+# 서비스 계정 키 파일 복사
+COPY key.json /app/key.json
+
 # 환경 변수 파일 복사
 COPY .env .env
 

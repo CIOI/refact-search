@@ -178,3 +178,6 @@ typesense-data/
 
 # Qdrant
 qdrant_storage/
+
+# Google Cloud
+key.json

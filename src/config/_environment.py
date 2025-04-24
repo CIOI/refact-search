@@ -17,6 +17,8 @@ class Environment(BaseSettings):
     TOKENIZER_NAME: str = "patrickjohncyh/fashion-clip"
     VECTOR_SIZE: int = 512
 
+    GOOGLE_APPLICATION_CREDENTIALS: str
+
     model_config = {
         "env_file": ".env",
         "env_file_encoding": "utf-8",

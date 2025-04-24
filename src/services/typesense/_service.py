@@ -2,6 +2,7 @@ from typing import Dict, List, Optional
 from src.managers.typesense import TypesenseManager
 from src.config._logger import LoggerService
 from src.databases.schema import MallSchema, get_mall_schema
+from src.translator.google import GoogleTranslator
 from typesense.types.collection import CollectionCreateSchema
 from typesense.types.document import RequiredSearchParameters
 from pathlib import Path
@@ -14,15 +15,18 @@ class TypesenseService:
     Attributes:
         typesense_manager (TypesenseManager): Typesense 매니저
         logger (LoggerService): 로깅 서비스
+        translator (Translator): 번역 서비스
     """
 
     def __init__(
         self,
         typesense_manager: TypesenseManager,
         logger: LoggerService,
+        translator: GoogleTranslator,
     ):
         self.typesense_manager = typesense_manager
         self.logger = logger
+        self.translator = translator
         self.mall_id: Optional[str] = None
         self.mall_schema: Optional[MallSchema] = None
 
@@ -50,8 +54,9 @@ class TypesenseService:
             Dict: 검색 결과
         """
         try:
+            translated_query = self.translator.translate_query(query)
             search_parameters: RequiredSearchParameters = {
-                "q": query,
+                "q": translated_query,
                 "query_by": query_by,
             }
 
@@ -65,7 +70,10 @@ class TypesenseService:
                 search_parameters,
             )
 
-            self.logger.info(f"Search completed for query: {query} in mall: {mall_id}")
+            self.logger.info(
+                f"Search completed for query: {query} "
+                f"(translated: {translated_query}) in mall: {mall_id}"
+            )
             return results
         except Exception as e:
             self.logger.error(

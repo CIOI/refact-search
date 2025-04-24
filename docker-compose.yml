@@ -22,11 +22,6 @@ services:
       - .env
     depends_on:
       - typesense
-    environment:
-      - TYPESENSE_HOST=typesense
-      - TYPESENSE_PORT=8108
-      - TYPESENSE_PROTOCOL=http
-
 
   qdrant:
     image: qdrant/qdrant
